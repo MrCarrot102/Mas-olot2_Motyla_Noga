@@ -3,10 +3,10 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 
-public class SimpleApp extends JFrame implements KeyListener {
+public class SimpleApp extends JFrame {
     private final int WIDTH = 400;
     private final int HEIGHT = 600;
-    private JPanel gamePanel; // Panel do rysowania gry
+    private JPanel mainPanel; // Panel do rysowania gry
     private ArrayList<Pocisk> pociski = new ArrayList<>();
     private ArrayList<Przeciwnik> przeciwnicy = new ArrayList<>();
     private StatekGracza statek;
@@ -20,22 +20,124 @@ public class SimpleApp extends JFrame implements KeyListener {
         setResizable(false);
         setLocationRelativeTo(null);
 
-        gamePanel = new GamePanel();
-        gamePanel.setBackground(Color.BLACK);
-        add(gamePanel);
+        // Tworzenie ekranu startowego
+        JPanel startPanel = new JPanel();
+        startPanel.setLayout(new BorderLayout());
 
+        JLabel titleLabel = new JLabel("Masłolot 2. Motyla Noga.");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        startPanel.add(titleLabel, BorderLayout.NORTH);
+
+        JButton startButton = new JButton("Start");
+        startButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        startButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                remove(startPanel); // Usunięcie ekranu startowego
+                initializeGame(); // Inicjalizacja gry
+            }
+        });
+        startPanel.add(startButton, BorderLayout.CENTER);
+
+        // Dodaj przycisk do wyboru postaci
+        JButton characterButton = new JButton("Wybierz postać");
+        characterButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        characterButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Tutaj obsłuż wybór postaci, np. pokazując okno dialogowe z listą postaci do wyboru
+                // Po wybraniu postaci wykonaj odpowiednie działania, np. przekazanie informacji o wybranej postaci do gry
+            }
+        });
+        startPanel.add(characterButton, BorderLayout.SOUTH);
+
+        add(startPanel);
+    }
+
+    private void restartGame() {
+        isGameOver = false;
+        score = 0;
+        pociski.clear();
+        przeciwnicy.clear();
+        statek.resetPosition(WIDTH / 2, HEIGHT / 2);
+        generujPrzeciwnikow();
+    }
+
+    private void initializeGame() {
+        // Usunięcie ekranu startowego
+        getContentPane().removeAll();
+        revalidate();
+        repaint();
+
+        // Inicjalizacja gry
+        mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Rysowanie zawartości gry
+                for (Pocisk p : pociski) {
+                    p.draw(g);
+                }
+                for (Przeciwnik przeciwnik : przeciwnicy) {
+                    przeciwnik.draw(g);
+                }
+                statek.draw(g);
+                g.setColor(Color.WHITE);
+                g.drawString("Score: " + score, 20, 20);
+
+                if (isGameOver) {
+                    String gameOverMsg = "Game Over. Twój wynik: " + score + ". Naciśnij R, aby zrestartować.";
+                    FontMetrics fontMetrics = g.getFontMetrics();
+                    int textWidth = fontMetrics.stringWidth(gameOverMsg);
+                    int x = 50;
+                    int y = 300;
+                    g.drawString(gameOverMsg, x, y);
+                }
+            }
+        };
+        mainPanel.setBackground(Color.BLACK);
+        mainPanel.setFocusable(true);
+        mainPanel.requestFocusInWindow();
+
+        // Dodanie głównego panelu do ramki
+        getContentPane().add(mainPanel);
+
+        // Ponowne wymalowanie ramki
+        revalidate();
+        repaint();
+
+        // Dodanie akcji przycisku R do resetowania gry
+        Action restartAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isGameOver) {
+                    restartGame();
+                }
+            }
+        };
+        mainPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0), "restart");
+        mainPanel.getActionMap().put("restart", restartAction);
+
+        // Rozpoczęcie gry
+        startGame();
+    }
+
+    private void startGame() {
+        // Inicjalizacja początkowych wartości gry, wątków, nasłuchiwania itp.
         statek = new StatekGracza(WIDTH / 2, HEIGHT / 2);
         Timer timer = new Timer(10, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isGameOver) {
                     update();
-                    gamePanel.repaint();
+                    mainPanel.repaint();
                 }
             }
         });
         timer.start();
         generujPrzeciwnikow();
+
 
         // Automatyczne strzelanie co 500 milisekund
         Timer fireTimer = new Timer(200, new ActionListener() {
@@ -51,44 +153,15 @@ public class SimpleApp extends JFrame implements KeyListener {
         fireTimer.start();
 
         // Dodanie nasłuchiwania ruchu myszy
-        gamePanel.addMouseMotionListener(new MouseAdapter() {
+        mainPanel.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
                 statek.moveTo(e.getX(), e.getY());
             }
         });
-
-        // Dodanie nasłuchiwania klawiszy
-        addKeyListener(this);
-        setFocusable(true);
     }
 
-    private class GamePanel extends JPanel {
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            statek.draw(g);
-            for (Pocisk p : pociski) {
-                p.draw(g);
-            }
-            for (Przeciwnik przeciwnik : przeciwnicy) {
-                przeciwnik.draw(g);
-            }
-            g.setColor(Color.WHITE);
-            g.drawString("Score: " + score, 20, 20);
-
-            if (isGameOver) {
-                String gameOverMsg = "Game Over. Twój wynik: " + score + ". Naciśnij R, aby zrestartować.";
-                FontMetrics fontMetrics = g.getFontMetrics();
-                int textWidth = fontMetrics.stringWidth(gameOverMsg);
-                int x = 50;
-                int y = 300;
-                g.drawString(gameOverMsg, x, y);
-            }
-        }
-    }
-
-    public void update() {
+    private void update() {
         for (Pocisk p : pociski) {
             p.update();
         }
@@ -125,7 +198,7 @@ public class SimpleApp extends JFrame implements KeyListener {
         }
     }
 
-    public void generujPrzeciwnikow() {
+    private void generujPrzeciwnikow() {
         Timer timer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -139,28 +212,19 @@ public class SimpleApp extends JFrame implements KeyListener {
         timer.start();
     }
 
-    @Override
+
+    public void keyTyped(KeyEvent e) {
+    }
+
+
+    public void keyReleased(KeyEvent e) {
+    }
+
+
     public void keyPressed(KeyEvent e) {
         if (isGameOver && e.getKeyCode() == KeyEvent.VK_R) {
             restartGame();
         }
-    }
-
-    private void restartGame() {
-        isGameOver = false;
-        score = 0;
-        pociski.clear();
-        przeciwnicy.clear();
-        statek.resetPosition(WIDTH / 2, HEIGHT / 2);
-        generujPrzeciwnikow();
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
     }
 
     public static void main(String[] args) {
