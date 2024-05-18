@@ -12,14 +12,24 @@ public class SimpleApp extends JFrame {
     private StatekGracza statek;
     private int score = 0;
     private boolean isGameOver = false;
+    private String wybranaPostac = "Monarcha"; // Domyślnie wybrana postać
+
+    private Timer gameTimer;
+    private Timer fireTimer;
+    private Timer enemyTimer;
 
     public SimpleApp() {
         setSize(WIDTH, HEIGHT);
-        setTitle("Gra 1942");
+        setTitle("Masłolot 2. Motyla Noga.");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setLocationRelativeTo(null);
 
+        // Pokaż ekran startowy
+        showStartScreen();
+    }
+
+    private void showStartScreen() {
         // Tworzenie ekranu startowego
         JPanel startPanel = new JPanel();
         startPanel.setLayout(new BorderLayout());
@@ -46,22 +56,49 @@ public class SimpleApp extends JFrame {
         characterButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Tutaj obsłuż wybór postaci, np. pokazując okno dialogowe z listą postaci do wyboru
-                // Po wybraniu postaci wykonaj odpowiednie działania, np. przekazanie informacji o wybranej postaci do gry
+                wybierzPostac(); // Obsługa wyboru postaci
             }
         });
         startPanel.add(characterButton, BorderLayout.SOUTH);
 
-        add(startPanel);
+        // Wyświetlenie ekranu startowego
+        setContentPane(startPanel);
+        revalidate();
+        repaint();
+    }
+
+    private void wybierzPostac() {
+        String[] postacie = {"Monarcha", "Pawica", "Bielinek", "Rusałka"};
+        String nowaPostac = (String) JOptionPane.showInputDialog(
+                this,
+                "Wybierz swoją postać",
+                "Wybór postaci",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                postacie,
+                wybranaPostac);
+
+        if (nowaPostac != null) {
+            wybranaPostac = nowaPostac;
+        }
     }
 
     private void restartGame() {
+        if (gameTimer != null) {
+            gameTimer.stop();
+        }
+        if (fireTimer != null) {
+            fireTimer.stop();
+        }
+        if (enemyTimer != null) {
+            enemyTimer.stop();
+        }
+
         isGameOver = false;
         score = 0;
         pociski.clear();
         przeciwnicy.clear();
-        statek.resetPosition(WIDTH / 2, HEIGHT / 2);
-        generujPrzeciwnikow();
+        showStartScreen();
     }
 
     private void initializeGame() {
@@ -90,8 +127,8 @@ public class SimpleApp extends JFrame {
                     String gameOverMsg = "Game Over. Twój wynik: " + score + ". Naciśnij R, aby zrestartować.";
                     FontMetrics fontMetrics = g.getFontMetrics();
                     int textWidth = fontMetrics.stringWidth(gameOverMsg);
-                    int x = 50;
-                    int y = 300;
+                    int x = (getWidth() - textWidth) / 2;
+                    int y = getHeight() / 2;
                     g.drawString(gameOverMsg, x, y);
                 }
             }
@@ -125,8 +162,9 @@ public class SimpleApp extends JFrame {
 
     private void startGame() {
         // Inicjalizacja początkowych wartości gry, wątków, nasłuchiwania itp.
-        statek = new StatekGracza(WIDTH / 2, HEIGHT / 2);
-        Timer timer = new Timer(10, new ActionListener() {
+        statek = new StatekGracza(WIDTH / 2, HEIGHT / 2, wybranaPostac);
+
+        gameTimer = new Timer(10, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isGameOver) {
@@ -135,18 +173,15 @@ public class SimpleApp extends JFrame {
                 }
             }
         });
-        timer.start();
+        gameTimer.start();
         generujPrzeciwnikow();
 
-
-        // Automatyczne strzelanie co 500 milisekund
-        Timer fireTimer = new Timer(200, new ActionListener() {
+        // Automatyczne strzelanie co 200 milisekund
+        fireTimer = new Timer(200, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isGameOver) {
-                    int x = statek.getX() + statek.getWidth() / 2;
-                    int y = statek.getY();
-                    pociski.add(new Pocisk(x, y));
+                    statek.fire(pociski);
                 }
             }
         });
@@ -166,9 +201,12 @@ public class SimpleApp extends JFrame {
             p.update();
         }
         for (int i = 0; i < przeciwnicy.size(); i++) {
-            przeciwnicy.get(i).update();
-            if (przeciwnicy.get(i).getY() > HEIGHT) {
+            Przeciwnik przeciwnik = przeciwnicy.get(i);
+            przeciwnik.update();
+            if (przeciwnik.getY() > HEIGHT) {
                 przeciwnicy.remove(i);
+                score -= 5; // Odejmij 5 punktów, gdy przeciwnik przekroczy dolną część okna
+                i--; // Zmniejsz indeks, aby poprawnie przetworzyć kolejne elementy
             }
         }
 
@@ -182,6 +220,7 @@ public class SimpleApp extends JFrame {
                     pociski.remove(i);
                     przeciwnicy.remove(j);
                     score += 10;
+                    i--; // Zmniejsz indeks, aby poprawnie przetworzyć kolejne elementy
                     break;
                 }
             }
@@ -199,7 +238,7 @@ public class SimpleApp extends JFrame {
     }
 
     private void generujPrzeciwnikow() {
-        Timer timer = new Timer(1000, new ActionListener() {
+        enemyTimer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isGameOver) {
@@ -209,17 +248,14 @@ public class SimpleApp extends JFrame {
                 }
             }
         });
-        timer.start();
+        enemyTimer.start();
     }
-
 
     public void keyTyped(KeyEvent e) {
     }
 
-
     public void keyReleased(KeyEvent e) {
     }
-
 
     public void keyPressed(KeyEvent e) {
         if (isGameOver && e.getKeyCode() == KeyEvent.VK_R) {
@@ -241,15 +277,32 @@ class StatekGracza {
     private int x, y;
     private int width = 20;
     private int height = 30;
-    private int speed = 3; // Prędkość ruchu gracza
+    private Color color; // Kolor statku
 
-    public StatekGracza(int x, int y) {
+    public StatekGracza(int x, int y, String postac) {
         this.x = x;
         this.y = y;
+        switch (postac) {
+            case "Monarcha":
+                this.color = Color.BLUE;
+                break;
+            case "Pawica":
+                this.color = Color.GREEN;
+                break;
+            case "Bielinek":
+                this.color = Color.YELLOW;
+                break;
+            case "Rusałka":
+                this.color = Color.ORANGE;
+                break;
+            default:
+                this.color = Color.WHITE;
+                break;
+        }
     }
 
     public void draw(Graphics g) {
-        g.setColor(Color.WHITE);
+        g.setColor(color);
         g.fillRect(x, y, width, height);
     }
 
@@ -281,6 +334,32 @@ class StatekGracza {
 
     public int getHeight() {
         return height;
+    }
+
+    // Różne metody strzelania w zależności od postaci
+    public void fire(ArrayList<Pocisk> pociski) {
+        if (color == Color.WHITE) {
+            // Domyślna postać: jeden pocisk w górę
+            pociski.add(new Pocisk(x + width / 2, y));
+        } else if (color == Color.BLUE) {
+            // Monarcha: dwa pociski w górę
+            pociski.add(new Pocisk(x, y));
+            pociski.add(new Pocisk(x + width, y));
+        } else if (color == Color.GREEN) {
+            // Pawica: trzy pociski, jeden w górę i dwa na boki
+            pociski.add(new Pocisk(x + width / 2, y));
+            pociski.add(new Pocisk(x, y));
+            pociski.add(new Pocisk(x + width, y));
+        } else if (color == Color.YELLOW) {
+            // Bielinek: rozproszone strzały
+            pociski.add(new Pocisk(x + width / 2, y));
+            pociski.add(new Pocisk(x, y - 10));
+            pociski.add(new Pocisk(x + width, y - 10));
+        } else if (color == Color.ORANGE) {
+            // Rusałka: szybkie strzały
+            pociski.add(new Pocisk(x + width / 2, y));
+            pociski.add(new Pocisk(x + width / 2, y - 15));
+        }
     }
 }
 
