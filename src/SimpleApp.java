@@ -165,23 +165,27 @@ public class SimpleApp extends JFrame {
         for (Pocisk p : pociski) {
             p.update();
         }
-        for (int i = 0; i < przeciwnicy.size(); i++) {
-            przeciwnicy.get(i).update();
-            if (przeciwnicy.get(i).getY() > HEIGHT) {
+        for (int i=0; i<przeciwnicy.size();i++){
+            Przeciwnik przeciwnik = przeciwnicy.get(i);
+            przeciwnik.update();
+            if(przeciwnik.getY() > HEIGHT){
                 przeciwnicy.remove(i);
+                score -=5;
+                i--;
             }
         }
 
-        for (int i = 0; i < pociski.size(); i++) {
-            Pocisk p = pociski.get(i);
-            Rectangle pRect = p.getBounds();
-            for (int j = 0; j < przeciwnicy.size(); j++) {
+        for(int i=0;i<pociski.size();i++){
+            Pocisk p= pociski.get(i);
+            Rectangle pRect= p.getBounds();
+            for(int j=0;j< przeciwnicy.size(); j++){
                 Przeciwnik przeciwnik = przeciwnicy.get(j);
-                Rectangle przeciwnikRect = przeciwnik.getBounds();
-                if (pRect.intersects(przeciwnikRect)) {
+                Rectangle przeciwnikRect=przeciwnik.getBounds();
+                if(pRect.intersects(przeciwnikRect)){
                     pociski.remove(i);
                     przeciwnicy.remove(j);
-                    score += 10;
+                    score+=10;
+                    i--;
                     break;
                 }
             }
