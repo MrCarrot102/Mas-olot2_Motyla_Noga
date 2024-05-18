@@ -68,7 +68,7 @@ public class SimpleApp extends JFrame {
     }
 
     private void wybierzPostac() {
-        String[] postacie = {"Monarcha", "Pawica", "Bielinek", "Rusałka"};
+        String[] postacie = {"Monarcha", "Pawica", "Bielinek", "Wędrowiec"};
         String nowaPostac = (String) JOptionPane.showInputDialog(
                 this,
                 "Wybierz swoją postać",
@@ -292,7 +292,7 @@ class StatekGracza {
             case "Bielinek":
                 this.color = Color.YELLOW;
                 break;
-            case "Rusałka":
+            case "Wędrowiec":
                 this.color = Color.ORANGE;
                 break;
             default:
@@ -356,7 +356,7 @@ class StatekGracza {
             pociski.add(new Pocisk(x, y - 10));
             pociski.add(new Pocisk(x + width, y - 10));
         } else if (color == Color.ORANGE) {
-            // Rusałka: szybkie strzały
+            // Wędrowiec: szybkie strzały
             pociski.add(new Pocisk(x + width / 2, y));
             pociski.add(new Pocisk(x + width / 2, y - 15));
         }
