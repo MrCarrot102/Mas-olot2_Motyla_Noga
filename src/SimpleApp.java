@@ -1,6 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.*;
+import java.io.*;
+import javax.imageio.ImageIO;
 import java.util.ArrayList;
 
 public class SimpleApp extends JFrame {
@@ -18,12 +21,21 @@ public class SimpleApp extends JFrame {
     private Timer fireTimer;
     private Timer enemyTimer;
 
+    private BufferedImage backgroundImage;
+
     public SimpleApp() {
         setSize(WIDTH, HEIGHT);
         setTitle("Masłolot 2. Motyla Noga.");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setLocationRelativeTo(null);
+
+        // Załaduj obraz tła
+        try {
+            backgroundImage = ImageIO.read(getClass().getResource("Grafika/niebo.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // Pokaż ekran startowy
         showStartScreen();
@@ -112,6 +124,11 @@ public class SimpleApp extends JFrame {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
+                // Rysowanie tła
+                if (backgroundImage != null) {
+                    g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                }
+
                 // Rysowanie zawartości gry
                 for (Pocisk p : pociski) {
                     p.draw(g);
@@ -251,168 +268,12 @@ public class SimpleApp extends JFrame {
         enemyTimer.start();
     }
 
-    public void keyTyped(KeyEvent e) {
-    }
-
-    public void keyReleased(KeyEvent e) {
-    }
-
-    public void keyPressed(KeyEvent e) {
-        if (isGameOver && e.getKeyCode() == KeyEvent.VK_R) {
-            restartGame();
-        }
-    }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
-                SimpleApp app = new SimpleApp();
-                app.setVisible(true);
+                new SimpleApp().setVisible(true);
             }
         });
-    }
-}
-
-class StatekGracza {
-    private int x, y;
-    private int width = 20;
-    private int height = 30;
-    private Color color; // Kolor statku
-
-    public StatekGracza(int x, int y, String postac) {
-        this.x = x;
-        this.y = y;
-        switch (postac) {
-            case "Monarcha":
-                this.color = Color.BLUE;
-                break;
-            case "Pawica":
-                this.color = Color.GREEN;
-                break;
-            case "Bielinek":
-                this.color = Color.YELLOW;
-                break;
-            case "Wędrowiec":
-                this.color = Color.ORANGE;
-                break;
-            default:
-                this.color = Color.WHITE;
-                break;
-        }
-    }
-
-    public void draw(Graphics g) {
-        g.setColor(color);
-        g.fillRect(x, y, width, height);
-    }
-
-    public void moveTo(int mouseX, int mouseY) {
-        x = mouseX - width / 2;
-        y = mouseY - height / 2;
-    }
-
-    public void resetPosition(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, width, height);
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    // Różne metody strzelania w zależności od postaci
-    public void fire(ArrayList<Pocisk> pociski) {
-        if (color == Color.WHITE) {
-            // Domyślna postać: jeden pocisk w górę
-            pociski.add(new Pocisk(x + width / 2, y));
-        } else if (color == Color.BLUE) {
-            // Monarcha: dwa pociski w górę
-            pociski.add(new Pocisk(x, y));
-            pociski.add(new Pocisk(x + width, y));
-        } else if (color == Color.GREEN) {
-            // Pawica: trzy pociski, jeden w górę i dwa na boki
-            pociski.add(new Pocisk(x + width / 2, y));
-            pociski.add(new Pocisk(x, y));
-            pociski.add(new Pocisk(x + width, y));
-        } else if (color == Color.YELLOW) {
-            // Bielinek: rozproszone strzały
-            pociski.add(new Pocisk(x + width / 2, y));
-            pociski.add(new Pocisk(x, y - 10));
-            pociski.add(new Pocisk(x + width, y - 10));
-        } else if (color == Color.ORANGE) {
-            // Wędrowiec: szybkie strzały
-            pociski.add(new Pocisk(x + width / 2, y));
-            pociski.add(new Pocisk(x + width / 2, y - 15));
-        }
-    }
-}
-
-class Pocisk {
-    private int x, y;
-    private int width = 3;
-    private int height = 10;
-    private int speed = 5;
-
-    public Pocisk(int x, int y) {
-        this.x = x;
-        this.y = y - height / 2;
-    }
-
-    public void draw(Graphics g) {
-        g.setColor(Color.WHITE);
-        g.fillRect(x, y, width, height);
-    }
-
-    public void update() {
-        y -= speed;
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, width, height);
-    }
-}
-
-class Przeciwnik {
-    private int x, y;
-    private int width = 20;
-    private int height = 20;
-    private int speed = 3;
-
-    public Przeciwnik(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public void draw(Graphics g) {
-        g.setColor(Color.RED);
-        g.fillRect(x, y, width, height);
-    }
-
-    public void update() {
-        y += speed;
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, width, height);
-    }
-
-    public int getY() {
-        return y;
     }
 }
