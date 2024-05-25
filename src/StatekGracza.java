@@ -27,10 +27,20 @@ public class StatekGracza {
     }
 
     public void fire(ArrayList<Pocisk> pociski) {
-        pociski.add(new Pocisk(x, y - HEIGHT / 2));
+        if (doubleShoot) {
+            pociski.add(new Pocisk(x - WIDTH / 4, y - HEIGHT / 2));
+            pociski.add(new Pocisk(x + WIDTH / 4, y - HEIGHT / 2));
+        } else {
+            pociski.add(new Pocisk(x, y - HEIGHT / 2));
+        }
     }
 
     public Rectangle getBounds() {
         return new Rectangle(x - WIDTH / 2, y - HEIGHT / 2, WIDTH, HEIGHT);
+    }
+
+    private boolean doubleShoot = false;
+    public void setDoubleShoot(boolean doubleShoot){
+        this.doubleShoot=doubleShoot;
     }
 }

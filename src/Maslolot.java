@@ -6,12 +6,14 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import java.util.ArrayList;
 
-public class SimpleApp extends JFrame {
+public class Maslolot extends JFrame {
     private final int WIDTH = 400;
     private final int HEIGHT = 600;
     private JPanel mainPanel; // Panel do rysowania gry
     private ArrayList<Pocisk> pociski = new ArrayList<>();
     private ArrayList<Przeciwnik> przeciwnicy = new ArrayList<>();
+
+    private ArrayList<PowerUp> powerUps = new ArrayList<>();
     private StatekGracza statek;
     private int score = 0;
     private boolean isGameOver = false;
@@ -22,8 +24,9 @@ public class SimpleApp extends JFrame {
     private Timer enemyTimer;
 
     private BufferedImage backgroundImage;
+    private BufferedImage menuBackgroundImage;
 
-    public SimpleApp() {
+    public Maslolot() {
         setSize(WIDTH, HEIGHT);
         setTitle("Masłolot 2. Motyla Noga.");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -32,6 +35,7 @@ public class SimpleApp extends JFrame {
 
         // Załaduj obraz tła
         try {
+            menuBackgroundImage = ImageIO.read(getClass().getResource("Grafika/tło_menu.jpg"));
             backgroundImage = ImageIO.read(getClass().getResource("Grafika/niebo.png"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -42,27 +46,31 @@ public class SimpleApp extends JFrame {
     }
 
     private void showStartScreen() {
-        // Tworzenie ekranu startowego
-        JPanel startPanel = new JPanel();
-        startPanel.setLayout(new BorderLayout());
+        // Tworzenie ekranu startowego z niestandardowym tłem
+        JPanel startPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Rysowanie tła menu
+                if (menuBackgroundImage != null) {
+                    g.drawImage(menuBackgroundImage, 0, 0, getWidth(), getHeight(), this);
+                }
+            }
+        };
+        startPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
 
+        // Dodanie tytułu
         JLabel titleLabel = new JLabel("Masłolot 2. Motyla Noga.");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        startPanel.add(titleLabel, BorderLayout.NORTH);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTH;
+        startPanel.add(titleLabel, gbc);
 
-        JButton startButton = new JButton("Start");
-        startButton.setFont(new Font("Arial", Font.PLAIN, 20));
-        startButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                remove(startPanel); // Usunięcie ekranu startowego
-                initializeGame(); // Inicjalizacja gry
-            }
-        });
-        startPanel.add(startButton, BorderLayout.CENTER);
-
-        // Dodaj przycisk do wyboru postaci
+        // Dodanie przycisku wyboru postaci
         JButton characterButton = new JButton("Wybierz postać");
         characterButton.setFont(new Font("Arial", Font.PLAIN, 20));
         characterButton.addActionListener(new ActionListener() {
@@ -71,13 +79,30 @@ public class SimpleApp extends JFrame {
                 wybierzPostac(); // Obsługa wyboru postaci
             }
         });
-        startPanel.add(characterButton, BorderLayout.SOUTH);
+        gbc.gridy = 1;
+        startPanel.add(characterButton, gbc);
+
+        // Dodanie przycisku startowego
+        JButton startButton = new JButton("Start");
+        startButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        startButton.setPreferredSize(new Dimension(100, 40)); // Ustawienie preferowanego rozmiaru
+        startButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                remove(startPanel); // Usunięcie ekranu startowego
+                initializeGame(); // Inicjalizacja gry
+            }
+        });
+        gbc.gridy = 2;
+        gbc.anchor = GridBagConstraints.SOUTH;
+        startPanel.add(startButton, gbc);
 
         // Wyświetlenie ekranu startowego
         setContentPane(startPanel);
         revalidate();
         repaint();
     }
+
 
     private void wybierzPostac() {
         String[] postacie = {"Monarcha", "Pawica", "Bielinek", "Wędrowiec"};
@@ -135,6 +160,9 @@ public class SimpleApp extends JFrame {
                 }
                 for (Przeciwnik przeciwnik : przeciwnicy) {
                     przeciwnik.draw(g);
+                }
+                for (PowerUp powerUp : powerUps) {
+                    powerUp.draw(g);
                 }
                 statek.draw(g);
                 g.setColor(Color.WHITE);
@@ -217,16 +245,17 @@ public class SimpleApp extends JFrame {
         for (Pocisk p : pociski) {
             p.update();
         }
+        // Aktualizacja przeciwników
         for (int i = 0; i < przeciwnicy.size(); i++) {
             Przeciwnik przeciwnik = przeciwnicy.get(i);
             przeciwnik.update();
             if (przeciwnik.getY() > HEIGHT) {
                 przeciwnicy.remove(i);
-                score -= 5; // Odejmij 5 punktów, gdy przeciwnik przekroczy dolną część okna
-                i--; // Zmniejsz indeks, aby poprawnie przetworzyć kolejne elementy
+                score -= 5;
+                i--;
             }
         }
-
+        // Sprawdzanie kolizji pocisków z przeciwnikami
         for (int i = 0; i < pociski.size(); i++) {
             Pocisk p = pociski.get(i);
             Rectangle pRect = p.getBounds();
@@ -237,12 +266,27 @@ public class SimpleApp extends JFrame {
                     pociski.remove(i);
                     przeciwnicy.remove(j);
                     score += 10;
-                    i--; // Zmniejsz indeks, aby poprawnie przetworzyć kolejne elementy
+                    i--;
+                    // Losowe generowanie power-upa
+                    if (Math.random() < 0.2) { // 20% szans na power-up
+                        String[] types = {"extra_points", "double_shoot"};
+                        String type = types[(int) (Math.random() * types.length)];
+                        powerUps.add(new PowerUp(przeciwnik.getBounds().x, przeciwnik.getY(), type));
+                    }
                     break;
                 }
             }
         }
-
+        // Aktualizacja power-upów
+        for (int i = 0; i < powerUps.size(); i++) {
+            PowerUp powerUp = powerUps.get(i);
+            powerUp.update();
+            if (powerUp.getBounds().intersects(statek.getBounds())) {
+                powerUps.remove(i);
+                applyPowerUp(powerUp);
+                i--;
+            }
+        }
         // Sprawdzanie kolizji z graczem
         Rectangle statekRect = statek.getBounds();
         for (Przeciwnik przeciwnik : przeciwnicy) {
@@ -251,6 +295,24 @@ public class SimpleApp extends JFrame {
                 isGameOver = true;
                 break;
             }
+        }
+    }
+    private void applyPowerUp(PowerUp powerUp) {
+        switch (powerUp.getType()) {
+            case "extra_points":
+                score += 100;
+                break;
+            case "double_shoot":
+                statek.setDoubleShoot(true);
+                Timer timer = new Timer(5000, new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        statek.setDoubleShoot(false);
+                    }
+                });
+                timer.setRepeats(false);
+                timer.start();
+                break;
         }
     }
 
@@ -272,7 +334,7 @@ public class SimpleApp extends JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new SimpleApp().setVisible(true);
+                new Maslolot().setVisible(true);
             }
         });
     }
