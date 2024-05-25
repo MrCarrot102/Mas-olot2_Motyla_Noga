@@ -6,12 +6,14 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import java.util.ArrayList;
 
-public class SimpleApp extends JFrame {
+public class Maslolot extends JFrame {
     private final int WIDTH = 400;
     private final int HEIGHT = 600;
     private JPanel mainPanel; // Panel do rysowania gry
     private ArrayList<Pocisk> pociski = new ArrayList<>();
     private ArrayList<Przeciwnik> przeciwnicy = new ArrayList<>();
+
+    private ArrayList<PowerUp> powerUps = new ArrayList<>();
     private StatekGracza statek;
     private int score = 0;
     private boolean isGameOver = false;
@@ -22,8 +24,9 @@ public class SimpleApp extends JFrame {
     private Timer enemyTimer;
 
     private BufferedImage backgroundImage;
+    private BufferedImage menuBackgroundImage;
 
-    public SimpleApp() {
+    public Maslolot() {
         setSize(WIDTH, HEIGHT);
         setTitle("Masłolot 2. Motyla Noga.");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -32,6 +35,7 @@ public class SimpleApp extends JFrame {
 
         // Załaduj obraz tła
         try {
+            menuBackgroundImage = ImageIO.read(getClass().getResource("Grafika/tło_menu.jpg"));
             backgroundImage = ImageIO.read(getClass().getResource("Grafika/niebo.png"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -42,42 +46,80 @@ public class SimpleApp extends JFrame {
     }
 
     private void showStartScreen() {
-        // Tworzenie ekranu startowego
-        JPanel startPanel = new JPanel();
-        startPanel.setLayout(new BorderLayout());
+        // Tworzenie ekranu startowego z niestandardowym tłem
+        JPanel startPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Rysowanie tła menu
+                if (menuBackgroundImage != null) {
+                    g.drawImage(menuBackgroundImage, 0, 0, getWidth(), getHeight(), this);
+                }
+            }
+        };
+        startPanel.setLayout(new BoxLayout(startPanel, BoxLayout.Y_AXIS));
 
+        // Dodanie tytułu gry na górze
         JLabel titleLabel = new JLabel("Masłolot 2. Motyla Noga.");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        startPanel.add(titleLabel, BorderLayout.NORTH);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        startPanel.add(titleLabel);
+        startPanel.add(Box.createRigidArea(new Dimension(20, 100))); // Odstęp między tytułem a przyciskami
 
+        // Dodanie przycisku Start
         JButton startButton = new JButton("Start");
         startButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        startButton.setMaximumSize(new Dimension(150, 40)); // Ustawienie maksymalnego rozmiaru
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                remove(startPanel); // Usunięcie ekranu startowego
+                getContentPane().removeAll(); // Usunięcie ekranu startowego
                 initializeGame(); // Inicjalizacja gry
             }
         });
-        startPanel.add(startButton, BorderLayout.CENTER);
+        startPanel.add(Box.createVerticalGlue()); // Elastyczny obszar
+        startPanel.add(startButton);
 
-        // Dodaj przycisk do wyboru postaci
+        // Dodanie przycisku Wybór postaci
         JButton characterButton = new JButton("Wybierz postać");
         characterButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        characterButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        characterButton.setMaximumSize(new Dimension(200, 40)); // Ustawienie maksymalnego rozmiaru
         characterButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 wybierzPostac(); // Obsługa wyboru postaci
             }
         });
-        startPanel.add(characterButton, BorderLayout.SOUTH);
+        startPanel.add(Box.createVerticalGlue()); // Elastyczny obszar
+        startPanel.add(characterButton);
+
+        // Dodanie przycisku Wyjście
+        JButton exitButton = new JButton("Wyjście");
+        exitButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        exitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        exitButton.setMaximumSize(new Dimension(150, 40)); // Ustawienie maksymalnego rozmiaru
+        exitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0); // Wyjście z aplikacji
+            }
+        });
+        startPanel.add(Box.createVerticalGlue()); // Elastyczny obszar
+        startPanel.add(exitButton);
+
+        // Ustawienie preferowanego rozmiaru okna na 400x600
+        startPanel.setPreferredSize(new Dimension(400, 600));
 
         // Wyświetlenie ekranu startowego
         setContentPane(startPanel);
-        revalidate();
-        repaint();
+        pack(); // Dopasowanie ramki do zawartości
+        setLocationRelativeTo(null); // Wyśrodkowanie ramki
+        setVisible(true);
     }
+
+
 
     private void wybierzPostac() {
         String[] postacie = {"Monarcha", "Pawica", "Bielinek", "Wędrowiec"};
@@ -135,6 +177,9 @@ public class SimpleApp extends JFrame {
                 }
                 for (Przeciwnik przeciwnik : przeciwnicy) {
                     przeciwnik.draw(g);
+                }
+                for (PowerUp powerUp : powerUps) {
+                    powerUp.draw(g);
                 }
                 statek.draw(g);
                 g.setColor(Color.WHITE);
@@ -217,16 +262,17 @@ public class SimpleApp extends JFrame {
         for (Pocisk p : pociski) {
             p.update();
         }
+        // Aktualizacja przeciwników
         for (int i = 0; i < przeciwnicy.size(); i++) {
             Przeciwnik przeciwnik = przeciwnicy.get(i);
             przeciwnik.update();
             if (przeciwnik.getY() > HEIGHT) {
                 przeciwnicy.remove(i);
-                score -= 5; // Odejmij 5 punktów, gdy przeciwnik przekroczy dolną część okna
-                i--; // Zmniejsz indeks, aby poprawnie przetworzyć kolejne elementy
+                score -= 5;
+                i--;
             }
         }
-
+        // Sprawdzanie kolizji pocisków z przeciwnikami
         for (int i = 0; i < pociski.size(); i++) {
             Pocisk p = pociski.get(i);
             Rectangle pRect = p.getBounds();
@@ -237,12 +283,27 @@ public class SimpleApp extends JFrame {
                     pociski.remove(i);
                     przeciwnicy.remove(j);
                     score += 10;
-                    i--; // Zmniejsz indeks, aby poprawnie przetworzyć kolejne elementy
+                    i--;
+                    // Losowe generowanie power-upa
+                    if (Math.random() < 0.2) { // 20% szans na power-up
+                        String[] types = {"extra_points", "double_shoot"};
+                        String type = types[(int) (Math.random() * types.length)];
+                        powerUps.add(new PowerUp(przeciwnik.getBounds().x, przeciwnik.getY(), type));
+                    }
                     break;
                 }
             }
         }
-
+        // Aktualizacja power-upów
+        for (int i = 0; i < powerUps.size(); i++) {
+            PowerUp powerUp = powerUps.get(i);
+            powerUp.update();
+            if (powerUp.getBounds().intersects(statek.getBounds())) {
+                powerUps.remove(i);
+                applyPowerUp(powerUp);
+                i--;
+            }
+        }
         // Sprawdzanie kolizji z graczem
         Rectangle statekRect = statek.getBounds();
         for (Przeciwnik przeciwnik : przeciwnicy) {
@@ -251,6 +312,14 @@ public class SimpleApp extends JFrame {
                 isGameOver = true;
                 break;
             }
+        }
+    }
+    private void applyPowerUp(PowerUp powerUp) {
+        switch (powerUp.getType()) {
+            case "extra_points":
+                score += 100;
+                break;
+
         }
     }
 
@@ -272,7 +341,7 @@ public class SimpleApp extends JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new SimpleApp().setVisible(true);
+                new Maslolot().setVisible(true);
             }
         });
     }
