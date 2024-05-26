@@ -28,4 +28,5 @@ public class Przeciwnik {
     public Rectangle getBounds() {
         return new Rectangle(x - WIDTH / 2, y - HEIGHT / 2, WIDTH, HEIGHT);
     }
+
 }
