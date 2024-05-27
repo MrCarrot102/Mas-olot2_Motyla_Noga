@@ -123,7 +123,7 @@ public class Maslolot extends JFrame {
     }
 
     private void wybierzPostac() {
-        String[] postacie = {"Monarcha", "", "Bielinek", "Wędrowiec"};
+        String[] postacie = {"Monarcha", "Marek", "Bielinek", "Wędrowiec"};
         String nowaPostac = (String) JOptionPane.showInputDialog(
                 this,
                 "Wybierz swoją postać",

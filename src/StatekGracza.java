@@ -27,10 +27,10 @@ public class StatekGracza {
                     break;
                 case "Bielinek":
                     image = ImageIO.read(getClass().getResource("Grafika/bielinek.png"));
-                    break;/*
+                    break;
                 case "Wędrowiec":
-                    image = ImageIO.read(getClass().getResource("wedrowiec.png"));
-                    break;*/
+                    image = ImageIO.read(getClass().getResource("Grafika/wedrowiec.png"));
+                    break;
             }
         } catch (IOException e) {
             e.printStackTrace();

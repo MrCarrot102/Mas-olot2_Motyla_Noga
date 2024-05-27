@@ -7,7 +7,7 @@ public class Pocisk {
     private int x;
     private int y;
     private int speed;
-    private final int SIZE = 10;
+    private final int SIZE = 15;
     private BufferedImage[] images;
     private int currentFrame = 0;
     private int frameCount = 6;
@@ -62,7 +62,7 @@ public class Pocisk {
 
     public void draw(Graphics g) {
         if (images != null && images[currentFrame] != null) {
-            g.drawImage(images[currentFrame], x - SIZE / 2, y - SIZE / 2, SIZE * 2, SIZE * 2, null);
+            g.drawImage(images[currentFrame], x - SIZE / 2, y - SIZE / 2, SIZE, SIZE, null); // Adjusted width and height to SIZE
         } else {
             g.setColor(Color.RED);
             g.fillRect(x - SIZE / 2, y - SIZE / 2, SIZE, SIZE);
@@ -74,6 +74,6 @@ public class Pocisk {
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x - SIZE / 2, y - SIZE / 2, SIZE * 2, SIZE * 2);
+        return new Rectangle(x - SIZE / 2, y - SIZE / 2, SIZE, SIZE);
     }
 }
