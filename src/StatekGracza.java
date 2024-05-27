@@ -22,12 +22,12 @@ public class StatekGracza {
                 case "Monarcha":
                     image = ImageIO.read(getClass().getResource("Grafika/monarcha.png"));
                     break;
-                /*case "Pawica":
-                    image = ImageIO.read(getClass().getResource("pawica.png"));
+                case "Marek":
+                    image = ImageIO.read(getClass().getResource("Grafika/marek.png"));
                     break;
                 case "Bielinek":
-                    image = ImageIO.read(getClass().getResource("bielinek.png"));
-                    break;
+                    image = ImageIO.read(getClass().getResource("Grafika/bielinek.png"));
+                    break;/*
                 case "Wędrowiec":
                     image = ImageIO.read(getClass().getResource("wedrowiec.png"));
                     break;*/
@@ -57,22 +57,19 @@ public class StatekGracza {
     public void fire(ArrayList<Pocisk> pociski) {
         switch (wybranaPostac) {
             case "Monarcha":
-                // Monarcha fires normally
+                // Monarcha
                 pociski.add(new Pocisk(x, y - HEIGHT / 2, wybranaPostac));
                 break;
-            case "Pawica":
-                // Pawica fires a series of 3 projectiles
-                pociski.add(new Pocisk(x, y - HEIGHT / 2, wybranaPostac));
-                pociski.add(new Pocisk(x, y - HEIGHT / 2, wybranaPostac));
+            case "Marek":
+                // Marek
                 pociski.add(new Pocisk(x, y - HEIGHT / 2, wybranaPostac));
                 break;
             case "Bielinek":
-                // Bielinek fires slowly
+                // Bielinek
                 pociski.add(new Pocisk(x, y - HEIGHT / 2, wybranaPostac));
                 break;
             case "Wędrowiec":
-                // Wędrowiec fires quickly
-                pociski.add(new Pocisk(x, y - HEIGHT / 2, wybranaPostac));
+                // Wędrowiec
                 pociski.add(new Pocisk(x, y - HEIGHT / 2, wybranaPostac));
                 break;
         }

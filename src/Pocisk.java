@@ -24,7 +24,7 @@ public class Pocisk {
                 this.speed = 9;
                 loadImages("Grafika/red");
                 break;
-            case "Pawica":
+            case "Marek":
                 this.speed = 7;
                 loadImages("Grafika/red");
                 break;

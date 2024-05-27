@@ -3,6 +3,7 @@ nick:771
 nick:729
 nick:576
 nick:371
+nick:346
 nick:332
 nick:285
 nick:272
@@ -13,13 +14,19 @@ nick:257
 nick:234
 nick:222
 nick:207
+nick:145
 nick:144
+nick:125
 nick:87
 nick:66
+nick:50
 nick:47
 nick:40
 nick:30
 nick:30
+nick:30
+nick:30
+nick:20
 nick:20
 nick:20
 nick:10
